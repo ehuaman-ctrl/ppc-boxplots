@@ -148,7 +148,7 @@ if len(rango_fechas) == 2:
         meta = 85.00
         total_days = len(df_analisis)
 
-        # KPI Metrics en Streamlit (Con el nuevo CSS se verán como cuadros modernos)
+        #Metrics en Streamlit
         col1, col2, col3, col4, col5 = st.columns(5)
         
         col1.metric("Period Average", f"{promedio_periodo:.1f}%")
@@ -238,7 +238,7 @@ if len(rango_fechas) == 2:
                   loc='upper right', fontsize=10, framealpha=0.9, edgecolor='black')
 
         plt.tight_layout()
-        st.pyplot(fig)
+       st.pyplot(fig, use_container_width=True)
 
 else:
     st.info("Please select a start and end date from the sidebar menu.") # Traducido
