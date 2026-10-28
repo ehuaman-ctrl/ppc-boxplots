@@ -22,7 +22,6 @@ id_copia = "1DQ35TWjRSx7SV0JDHI0Wu57y7-wkXE6WhRjmpJx3Qo8"
 sheet_url = f"https://docs.google.com/spreadsheets/d/{id_copia}/export?format=xlsx"
 nombre_pestana = "PPC DATABASE"
 
-# @st.cache_data evita que se vuelva a descargar el archivo en cada interacción
 @st.cache_data 
 def cargar_datos_diarios(url, pestana):
     df_global = pd.read_excel(url, sheet_name=pestana, header=0, usecols="B,M,N,O,P,Q")
@@ -96,14 +95,12 @@ if len(rango_fechas) == 2:
         # =====================================================================
         df_analisis['Semana_Label'] = df_analisis['fecha_semana'].dt.strftime('%b %d')
         
-        # CORRECCIÓN: Ordenar el dataframe por la fecha original para asegurar el orden cronológico
         df_analisis = df_analisis.sort_values('fecha_semana')
         
         def q25(x): return x.quantile(0.25)
         def q50(x): return x.quantile(0.50)
         def q75(x): return x.quantile(0.75)
 
-        # Ahora las semanas extraídas mantendrán el orden cronológico estricto
         orden_semanas = df_analisis['Semana_Label'].drop_duplicates().tolist()
 
         stats_semanal = df_analisis.groupby('Semana_Label', sort=False)['ppc_diario'].agg(
@@ -120,13 +117,21 @@ if len(rango_fechas) == 2:
         promedio_periodo = df_analisis['ppc_diario'].mean()
         std_periodo = df_analisis['ppc_diario'].std()
         meta = 85.00
+        total_days = len(df_analisis) # Recuperando la variable Total Days
 
-        # KPI Metrics en Streamlit
-        col1, col2, col3 = st.columns(3)
+        # KPI Metrics en Streamlit (MEJORA: 5 columnas en lugar de 3)
+        col1, col2, col3, col4, col5 = st.columns(5)
+        
         col1.metric("Period Average", f"{promedio_periodo:.1f}%")
         col2.metric("Target", f"{meta}%")
+        
+        # MEJORA: Cambio de título a "Gap"
         gap = promedio_periodo - meta
-        col3.metric("Gap vs Target", f"{gap:.1f} pts", delta=f"{gap:.1f} pts", delta_color="normal" if gap > 0 else "inverse")
+        col3.metric("Gap", f"{gap:.1f} pts", delta=f"{gap:.1f} pts", delta_color="normal" if gap > 0 else "inverse")
+        
+        # MEJORA: Nuevas métricas añadidas
+        col4.metric("Standard Dev", f"{std_periodo:.1f}%")
+        col5.metric("Total Days", f"{total_days}")
 
         # =====================================================================
         # PASO 4: Generación del Gráfico
@@ -144,7 +149,8 @@ if len(rango_fechas) == 2:
             boxprops=boxprops, medianprops=medianprops, flierprops=flierprops, showfliers=True
         )
 
-        ax.set_ylim(-25, 135)  
+        # MEJORA: Ampliados los márgenes superior e inferior para que no se corten los textos
+        ax.set_ylim(-35, 150)  
         ax.set_yticks(range(0, 101, 10))
         ax.yaxis.grid(True, linestyle='--', alpha=0.5, color='gray')
         ax.xaxis.grid(False)
@@ -165,14 +171,14 @@ if len(rango_fechas) == 2:
             color_borde = 'gray'
             if row['Etiqueta'] == 'BEST':
                 color_borde = 'blue'
-                ax.text(i, 120, '★ BEST', ha='center', va='center', fontsize=9, fontweight='bold',
+                ax.text(i, 130, '★ BEST', ha='center', va='center', fontsize=9, fontweight='bold',
                         color='black', bbox=dict(boxstyle='round', facecolor='lightgreen', edgecolor='darkgreen'))
             elif row['Etiqueta'] == 'WORST':
                 color_borde = 'red'
-                ax.text(i, 120, '▼ WORST', ha='center', va='center', fontsize=9, fontweight='bold',
+                ax.text(i, 130, '▼ WORST', ha='center', va='center', fontsize=9, fontweight='bold',
                         color='white', bbox=dict(boxstyle='round', facecolor='#ff4d4d', edgecolor='darkred'))
 
-            ax.text(i, 110, f"Avg: {row['media']:.1f}%", ha='center', va='center', fontsize=9, fontweight='bold',
+            ax.text(i, 118, f"Avg: {row['media']:.1f}%", ha='center', va='center', fontsize=9, fontweight='bold',
                     color=color_borde, bbox=dict(boxstyle='round', facecolor='white', edgecolor=color_borde))
 
             offset_x = 0.28
@@ -190,7 +196,8 @@ if len(rango_fechas) == 2:
                 f"R: {row['minimo']:.0f}-{row['maximo']:.0f}%"
             )
             
-            ax.text(i, -12, texto_inferior, ha='center', va='center', fontsize=8, color='black',
+            # MEJORA: Se baja a -18 para evitar que se amontone con el eje x
+            ax.text(i, -18, texto_inferior, ha='center', va='center', fontsize=8, color='black',
                     bbox=dict(boxstyle='round,pad=0.3', facecolor='#f8f9fa', edgecolor='black'))
 
         ax.set_title(f"Daily PPC Analysis", fontsize=18, fontweight='bold', pad=25)
