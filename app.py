@@ -10,9 +10,9 @@ from datetime import datetime
 warnings.filterwarnings('ignore')
 
 # Configuración de la página de Streamlit
-st.set_page_config(page_title="PPC Analysis", layout="wide")
+st.set_page_config(page_title="PPC Dashboard", layout="wide")
 
-st.title("PPC Analysis")
+st.title("LeanConstruct - Daily PPC Analysis Dashboard")
 st.markdown("Interactive analysis of daily PPC with dynamic boxplots based on selected dates.")
 
 # =====================================================================
@@ -50,6 +50,16 @@ def cargar_datos_diarios(url, pestana):
     if df_diario['ppc_diario'].max() <= 1.0 and df_diario['ppc_diario'].max() > 0:
         df_diario['ppc_diario'] = df_diario['ppc_diario'] * 100
 
+    # CORRECCIÓN: Cálculo de la fecha exacta diaria para el filtro
+    dias_offset = {
+        'PPC_MON': pd.Timedelta(days=0),
+        'PPC_TUE': pd.Timedelta(days=1),
+        'PPC_WED': pd.Timedelta(days=2),
+        'PPC_THU': pd.Timedelta(days=3),
+        'PPC_FRI': pd.Timedelta(days=4)
+    }
+    df_diario['fecha_diaria'] = df_diario['fecha_semana'] + df_diario['Dia'].map(dias_offset)
+
     return df_diario
 
 # Cargar los datos
@@ -61,8 +71,9 @@ with st.spinner('Cargando datos desde Google Sheets...'):
 # =====================================================================
 st.sidebar.header("Filtros de Análisis")
 
-min_date = df_analisis_completo['fecha_semana'].min().date()
-max_date = df_analisis_completo['fecha_semana'].max().date()
+# CORRECCIÓN: Usar 'fecha_diaria' en lugar de 'fecha_semana' para el min y max del calendario
+min_date = df_analisis_completo['fecha_diaria'].min().date()
+max_date = df_analisis_completo['fecha_diaria'].max().date()
 
 # Selector de rango de fechas
 rango_fechas = st.sidebar.date_input(
@@ -76,8 +87,8 @@ rango_fechas = st.sidebar.date_input(
 if len(rango_fechas) == 2:
     start_date, end_date = rango_fechas
     
-    # Filtrar el DataFrame según el rango seleccionado
-    mask = (df_analisis_completo['fecha_semana'].dt.date >= start_date) & (df_analisis_completo['fecha_semana'].dt.date <= end_date)
+    # CORRECCIÓN: Filtrar utilizando la 'fecha_diaria' exacta
+    mask = (df_analisis_completo['fecha_diaria'].dt.date >= start_date) & (df_analisis_completo['fecha_diaria'].dt.date <= end_date)
     df_analisis = df_analisis_completo.loc[mask].copy()
 
     if df_analisis.empty:
@@ -86,6 +97,7 @@ if len(rango_fechas) == 2:
         # =====================================================================
         # PASO 3: Preparación de Datos Filtrados
         # =====================================================================
+        # El gráfico sigue agrupándose lógicamente por el lunes de cada semana
         df_analisis['Semana_Label'] = df_analisis['fecha_semana'].dt.strftime('%b %d')
         
         def q25(x): return x.quantile(0.25)
@@ -109,7 +121,7 @@ if len(rango_fechas) == 2:
         std_periodo = df_analisis['ppc_diario'].std()
         meta = 85.00
 
-        # KPI Metrics en Streamlit 
+        # KPI Metrics en Streamlit
         col1, col2, col3 = st.columns(3)
         col1.metric("Period Average", f"{promedio_periodo:.1f}%")
         col2.metric("Target", f"{meta}%")
@@ -131,13 +143,13 @@ if len(rango_fechas) == 2:
             data=df_analisis, x='Semana_Label', y='ppc_diario', ax=ax, width=0.4, order=orden_semanas,
             boxprops=boxprops, medianprops=medianprops, flierprops=flierprops, showfliers=True
         )
-        
+
         ax.set_ylim(-25, 135)  
         ax.set_yticks(range(0, 101, 10))
         ax.yaxis.grid(True, linestyle='--', alpha=0.5, color='gray')
         ax.xaxis.grid(False)
         ax.set_xticks(range(len(orden_semanas)))
-        # Rotar etiquetas si hay muchas semanas
+        
         rotacion = 45 if len(orden_semanas) > 15 else 0
         ax.set_xticklabels(orden_semanas, fontsize=11, fontweight='bold', rotation=rotacion)
         ax.set_xlim(-1.5, len(orden_semanas) - 0.5)
@@ -151,7 +163,6 @@ if len(rango_fechas) == 2:
 
         for i, row in stats_semanal.iterrows():
             color_borde = 'gray'
-            
             if row['Etiqueta'] == 'BEST':
                 color_borde = 'blue'
                 ax.text(i, 120, '★ BEST', ha='center', va='center', fontsize=9, fontweight='bold',
@@ -178,7 +189,7 @@ if len(rango_fechas) == 2:
                 f"n={row['n']} days\n"
                 f"R: {row['minimo']:.0f}-{row['maximo']:.0f}%"
             )
-        
+            
             ax.text(i, -12, texto_inferior, ha='center', va='center', fontsize=8, color='black',
                     bbox=dict(boxstyle='round,pad=0.3', facecolor='#f8f9fa', edgecolor='black'))
 
@@ -193,7 +204,6 @@ if len(rango_fechas) == 2:
                   loc='upper right', fontsize=10, framealpha=0.9, edgecolor='black')
 
         plt.tight_layout()
-        
         st.pyplot(fig)
 
 else:
