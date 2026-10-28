@@ -109,19 +109,18 @@ if len(rango_fechas) == 2:
         std_periodo = df_analisis['ppc_diario'].std()
         meta = 85.00
 
-        # KPI Metrics en Streamlit
+        # KPI Metrics en Streamlit 
         col1, col2, col3 = st.columns(3)
         col1.metric("Period Average", f"{promedio_periodo:.1f}%")
         col2.metric("Target", f"{meta}%")
         gap = promedio_periodo - meta
-        col3.metric("Gap vs Target", f"{gap:.1f} pts", delta=gap, delta_color="normal" if gap > 0 else "inverse")
+        col3.metric("Gap vs Target", f"{gap:.1f} pts", delta=f"{gap:.1f} pts", delta_color="normal" if gap > 0 else "inverse")
 
         # =====================================================================
         # PASO 4: Generación del Gráfico
         # =====================================================================
         sns.set_theme(style="whitegrid")
         
-        # Ajustamos el tamaño para la web
         fig, ax = plt.subplots(figsize=(20, 10))
 
         flierprops = dict(marker='D', markerfacecolor='#ff4d4d', markersize=8, markeredgecolor='gray', alpha=0.8)
@@ -132,8 +131,8 @@ if len(rango_fechas) == 2:
             data=df_analisis, x='Semana_Label', y='ppc_diario', ax=ax, width=0.4, order=orden_semanas,
             boxprops=boxprops, medianprops=medianprops, flierprops=flierprops, showfliers=True
         )
-
-        ax.set_ylim(-30, 155)  
+        
+        ax.set_ylim(-25, 135)  
         ax.set_yticks(range(0, 101, 10))
         ax.yaxis.grid(True, linestyle='--', alpha=0.5, color='gray')
         ax.xaxis.grid(False)
@@ -148,35 +147,21 @@ if len(rango_fechas) == 2:
         ax.axhline(meta, color='blue', linestyle='--', linewidth=2, zorder=0)
         ax.axhline(promedio_periodo, color='#d99594', linestyle='-.', linewidth=2, zorder=0)
 
-        stats_globales_texto = (
-            f"Period Statistics\n"
-            f"----------------------------------------\n"
-            f"Period: {start_date.strftime('%b %d, %Y')} to {end_date.strftime('%b %d, %Y')}\n"
-            f"Total days: {len(df_analisis)}\n\n"
-            f"Period Average: {promedio_periodo:.2f}%\n"
-            f"Standard Deviation: {std_periodo:.2f}%\n"
-            f"Target: {meta:.2f}%\n"
-            f"Gap: {gap:.2f} pts"
-        )
-
-        props_bbox = dict(boxstyle='round,pad=0.5', facecolor='lightgray', edgecolor='black', alpha=0.9)
-        ax.text(0.01, 0.98, stats_globales_texto, transform=ax.transAxes, fontsize=10,
-                verticalalignment='top', horizontalalignment='left', bbox=props_bbox, family='monospace', zorder=10)
-
         stats_semanal = stats_semanal.set_index('Semana_Label').reindex(orden_semanas).reset_index()
 
         for i, row in stats_semanal.iterrows():
             color_borde = 'gray'
+            
             if row['Etiqueta'] == 'BEST':
                 color_borde = 'blue'
-                ax.text(i, 122, '★ BEST', ha='center', va='center', fontsize=9, fontweight='bold',
+                ax.text(i, 120, '★ BEST', ha='center', va='center', fontsize=9, fontweight='bold',
                         color='black', bbox=dict(boxstyle='round', facecolor='lightgreen', edgecolor='darkgreen'))
             elif row['Etiqueta'] == 'WORST':
                 color_borde = 'red'
-                ax.text(i, 122, '▼ WORST', ha='center', va='center', fontsize=9, fontweight='bold',
+                ax.text(i, 120, '▼ WORST', ha='center', va='center', fontsize=9, fontweight='bold',
                         color='white', bbox=dict(boxstyle='round', facecolor='#ff4d4d', edgecolor='darkred'))
 
-            ax.text(i, 112, f"Avg: {row['media']:.1f}%", ha='center', va='center', fontsize=9, fontweight='bold',
+            ax.text(i, 110, f"Avg: {row['media']:.1f}%", ha='center', va='center', fontsize=9, fontweight='bold',
                     color=color_borde, bbox=dict(boxstyle='round', facecolor='white', edgecolor=color_borde))
 
             offset_x = 0.28
@@ -193,8 +178,8 @@ if len(rango_fechas) == 2:
                 f"n={row['n']} days\n"
                 f"R: {row['minimo']:.0f}-{row['maximo']:.0f}%"
             )
-            
-            ax.text(i, -5, texto_inferior, ha='center', va='top', fontsize=8, color='black',
+        
+            ax.text(i, -12, texto_inferior, ha='center', va='center', fontsize=8, color='black',
                     bbox=dict(boxstyle='round,pad=0.3', facecolor='#f8f9fa', edgecolor='black'))
 
         ax.set_title(f"Daily PPC Analysis", fontsize=18, fontweight='bold', pad=25)
@@ -209,7 +194,6 @@ if len(rango_fechas) == 2:
 
         plt.tight_layout()
         
-        # En lugar de plt.show(), renderizamos la figura en Streamlit
         st.pyplot(fig)
 
 else:
