@@ -42,7 +42,7 @@ st.markdown("""
 
 st.title("PPC Analysis")
 st.markdown("Interactive analysis of daily PPC with dynamic boxplots based on selected dates.")
-st.divider() # Añade una línea divisoria elegante
+st.divider()
 
 # =====================================================================
 # PASO 1 y 2: Conexión y Limpieza de Datos Diarios
@@ -89,19 +89,19 @@ def cargar_datos_diarios(url, pestana):
 
     return df_diario
 
-# Cargar los datos (Texto traducido al inglés)
+# Cargar los datos
 with st.spinner('Loading data from Google Sheets...'):
     df_analisis_completo = cargar_datos_diarios(sheet_url, nombre_pestana)
 
 # =====================================================================
-# INTERFAZ DE USUARIO: Filtro de Fechas (Sidebar - TRADUCIDO)
+# INTERFAZ DE USUARIO: Filtro de Fechas (Sidebar)
 # =====================================================================
 st.sidebar.header("Analysis Filters")
 
 min_date = df_analisis_completo['fecha_diaria'].min().date()
 max_date = df_analisis_completo['fecha_diaria'].max().date()
 
-# Selector de rango de fechas traducido
+# Selector de rango de fechas
 rango_fechas = st.sidebar.date_input(
     "Select Period (Range):",
     value=(min_date, max_date),
@@ -117,7 +117,7 @@ if len(rango_fechas) == 2:
     df_analisis = df_analisis_completo.loc[mask].copy()
 
     if df_analisis.empty:
-        st.warning("No data available for the selected date range.") # Traducido
+        st.warning("No data available for the selected date range.")
     else:
         # =====================================================================
         # PASO 3: Preparación de Datos Filtrados
@@ -148,7 +148,7 @@ if len(rango_fechas) == 2:
         meta = 85.00
         total_days = len(df_analisis)
 
-        #Metrics en Streamlit
+        # KPI Metrics en Streamlit
         col1, col2, col3, col4, col5 = st.columns(5)
         
         col1.metric("Period Average", f"{promedio_periodo:.1f}%")
@@ -160,14 +160,15 @@ if len(rango_fechas) == 2:
         col4.metric("Standard Dev", f"{std_periodo:.1f}%")
         col5.metric("Total Days", f"{total_days}")
         
-        st.markdown("<br>", unsafe_allow_html=True) # Espacio visual entre las métricas y la gráfica
+        st.markdown("<br>", unsafe_allow_html=True)
 
         # =====================================================================
         # PASO 4: Generación del Gráfico
         # =====================================================================
         sns.set_theme(style="whitegrid")
         
-        fig, ax = plt.subplots(figsize=(20, 10))
+        # Resolución mejorada con dpi=300
+        fig, ax = plt.subplots(figsize=(20, 10), dpi=300)
 
         flierprops = dict(marker='D', markerfacecolor='#ff4d4d', markersize=8, markeredgecolor='gray', alpha=0.8)
         medianprops = dict(linestyle='-', linewidth=3, color='#ff7f0e')
@@ -238,7 +239,9 @@ if len(rango_fechas) == 2:
                   loc='upper right', fontsize=10, framealpha=0.9, edgecolor='black')
 
         plt.tight_layout()
-       st.pyplot(fig, use_container_width=True)
+        
+        # Ajuste al ancho del contenedor para mayor nitidez
+        st.pyplot(fig, use_container_width=True)
 
 else:
-    st.info("Please select a start and end date from the sidebar menu.") # Traducido
+    st.info("Please select a start and end date from the sidebar menu.")
