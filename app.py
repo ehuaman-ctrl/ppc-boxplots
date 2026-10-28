@@ -10,9 +10,9 @@ from datetime import datetime
 warnings.filterwarnings('ignore')
 
 # Configuración de la página de Streamlit
-st.set_page_config(page_title="PPC Dashboard", layout="wide")
+st.set_page_config(page_title="PPC Analysis", layout="wide")
 
-st.title("LeanConstruct - Daily PPC Analysis Dashboard")
+st.title("PPC Analysis")
 st.markdown("Interactive analysis of daily PPC with dynamic boxplots based on selected dates.")
 
 # =====================================================================
