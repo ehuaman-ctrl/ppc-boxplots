@@ -10,9 +10,9 @@ from datetime import datetime
 warnings.filterwarnings('ignore')
 
 # Configuración de la página de Streamlit
-st.set_page_config(page_title="PPC Dashboard", layout="wide")
+st.set_page_config(page_title="PPC Analysis", layout="wide")
 
-st.title("LeanConstruct - Daily PPC Analysis Dashboard")
+st.title("PPC Analysis")
 st.markdown("Interactive analysis of daily PPC with dynamic boxplots based on selected dates.")
 
 # =====================================================================
@@ -50,7 +50,6 @@ def cargar_datos_diarios(url, pestana):
     if df_diario['ppc_diario'].max() <= 1.0 and df_diario['ppc_diario'].max() > 0:
         df_diario['ppc_diario'] = df_diario['ppc_diario'] * 100
 
-    # CORRECCIÓN: Cálculo de la fecha exacta diaria para el filtro
     dias_offset = {
         'PPC_MON': pd.Timedelta(days=0),
         'PPC_TUE': pd.Timedelta(days=1),
@@ -71,7 +70,6 @@ with st.spinner('Cargando datos desde Google Sheets...'):
 # =====================================================================
 st.sidebar.header("Filtros de Análisis")
 
-# CORRECCIÓN: Usar 'fecha_diaria' en lugar de 'fecha_semana' para el min y max del calendario
 min_date = df_analisis_completo['fecha_diaria'].min().date()
 max_date = df_analisis_completo['fecha_diaria'].max().date()
 
@@ -87,7 +85,6 @@ rango_fechas = st.sidebar.date_input(
 if len(rango_fechas) == 2:
     start_date, end_date = rango_fechas
     
-    # CORRECCIÓN: Filtrar utilizando la 'fecha_diaria' exacta
     mask = (df_analisis_completo['fecha_diaria'].dt.date >= start_date) & (df_analisis_completo['fecha_diaria'].dt.date <= end_date)
     df_analisis = df_analisis_completo.loc[mask].copy()
 
@@ -97,13 +94,16 @@ if len(rango_fechas) == 2:
         # =====================================================================
         # PASO 3: Preparación de Datos Filtrados
         # =====================================================================
-        # El gráfico sigue agrupándose lógicamente por el lunes de cada semana
         df_analisis['Semana_Label'] = df_analisis['fecha_semana'].dt.strftime('%b %d')
+        
+        # CORRECCIÓN: Ordenar el dataframe por la fecha original para asegurar el orden cronológico
+        df_analisis = df_analisis.sort_values('fecha_semana')
         
         def q25(x): return x.quantile(0.25)
         def q50(x): return x.quantile(0.50)
         def q75(x): return x.quantile(0.75)
 
+        # Ahora las semanas extraídas mantendrán el orden cronológico estricto
         orden_semanas = df_analisis['Semana_Label'].drop_duplicates().tolist()
 
         stats_semanal = df_analisis.groupby('Semana_Label', sort=False)['ppc_diario'].agg(
