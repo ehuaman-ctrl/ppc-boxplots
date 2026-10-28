@@ -41,7 +41,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("PPC Analysis")
-st.markdown("Interactive analysis of daily PPC with dynamic boxplots based on selected dates.")
+st.markdown("Analysis of daily PPC with boxplots based on selected dates.")
 st.divider()
 
 # =====================================================================
